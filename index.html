@@ -59,6 +59,10 @@ body{
   -webkit-text-size-adjust:100%;
 }
 
+/* Utility to actually hide overlays when JS adds the class */
+.hidden { display: none !important; }
+
+     
 /* Make form controls at least 16px to prevent mobile auto-zoom on focus */
 input, textarea, select, button { font-size:16px; -webkit-text-size-adjust:100%; }
 
@@ -538,18 +542,32 @@ googleLoginBtn.addEventListener('click', async ()=>{
   }
 });
 
-auth.onAuthStateChanged(async (user)=>{
-  if(user){
-    userId = user.uid;
+auth.onAuthStateChanged(async (user) => {
+  try {
+    if (user) {
+      userId = user.uid;
+      // hide overlay and show app explicitly
+      loginScreen.style.display = 'none';
+      loginScreen.classList.add('hidden'); // defensive, in case CSS present
+      appUI.style.display = 'block';
+      // load cloud data (fall back to local if needed)
+      await loadFromFirestore();
+      updateDayUI();
+    } else {
+      // make sure overlay is visible and app hidden
+      loginScreen.style.display = 'flex';
+      loginScreen.classList.remove('hidden');
+      appUI.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('onAuthStateChanged handler error:', err);
+    // fallback UI: hide overlay so you can at least see the app (useful during debugging)
+    loginScreen.style.display = 'none';
     loginScreen.classList.add('hidden');
     appUI.style.display = 'block';
-    await loadFromFirestore();
-  } else {
-    // show login overlay
-    loginScreen.classList.remove('hidden');
-    appUI.style.display = 'none';
   }
 });
+
 
 // ---------- Initialize: load local backup and UI ----------
 loadLocal();
