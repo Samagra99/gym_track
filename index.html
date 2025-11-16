@@ -156,6 +156,31 @@ footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
   .progress{height:12px}
   .month-grid{height:78px}
 }
+/* Hard clamp: nothing in the main layout is allowed to be wider than the viewport */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Cards and layout cannot exceed screen width */
+.wrap, main, .card, .session {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Make sure long text always wraps and never forces horizontal growth */
+.exercise-list li span {
+  display: block;
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Progress grid also should never be wider than screen at once */
+.month-grid {
+  max-width: 100%;
+  box-sizing: border-box;
+}
 
 /* Accessibility: focus outlines */
 button:focus, input:focus, .pill:focus { outline:3px solid rgba(37,99,235,0.12); outline-offset:2px; }
