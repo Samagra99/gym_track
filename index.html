@@ -34,123 +34,119 @@ const auth = firebase.auth();
 :root{
   --bg:#f7f8fb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --ok:#10b981;
   --danger:#ef4444; --glass: rgba(0,0,0,0.04);
-  --max-width:980px;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  background:var(--bg); margin:0; color:#111; padding:16px; -webkit-font-smoothing:antialiased;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  background:var(--bg); margin:0; color:#111; padding:8px; -webkit-font-smoothing:antialiased;
   -webkit-text-size-adjust:100%;
+  font-size:15px;
+  line-height:1.35;
 }
-.wrap{max-width:var(--max-width);margin:0 auto;}
+.wrap{max-width:980px;margin:0 auto;padding:0 8px;}
 header{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:12px;
-  margin-bottom:14px;
+  gap:8px;
+  margin:8px 0;
   flex-wrap:wrap;
 }
-h1{font-size:18px;margin:0;line-height:1.1}
+h1{font-size:16px;margin:0;line-height:1.05}
 .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 button, .pill{
-  cursor:pointer;border:0;background:var(--card);padding:8px 12px;border-radius:8px;
-  box-shadow:0 1px 3px rgba(0,0,0,0.06);font-size:15px;
+  cursor:pointer;border:0;background:var(--card);padding:7px 10px;border-radius:8px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04);font-size:14px;
 }
 .nav-btn{
-  background:transparent;border:1px solid var(--glass);padding:8px 10px;border-radius:8px;
+  background:transparent;border:1px solid var(--glass);padding:6px 8px;border-radius:8px;
 }
 .date-display{
-  font-weight:600;padding:8px 12px;border-radius:8px;background:linear-gradient(180deg,#fff, #fbfdff);
-  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  font-weight:600;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#fff, #fbfdff);
+  box-shadow:0 1px 2px rgba(0,0,0,0.04);font-size:13px;
 }
 main{
-  display:grid;grid-template-columns:1fr 360px;gap:16px;
+  display:grid;grid-template-columns:1fr 320px;gap:12px;
 }
 .card{
-  background:var(--card);border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(16,24,40,0.04);
+  background:var(--card);border-radius:10px;padding:10px;box-shadow:0 6px 14px rgba(16,24,40,0.03);
 }
-.session{margin-bottom:10px;padding:10px;border-radius:10px;border:1px solid var(--glass)}
-.session h3{margin:0 0 6px 0;font-size:16px}
+.session{margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid var(--glass)}
+.session h3{margin:0 0 6px 0;font-size:15px}
 .exercise-list{margin:0;padding:0;list-style:none}
 .exercise-list li{
-  padding:8px 6px;border-top:1px dashed rgba(0,0,0,0.04);display:flex;align-items:center;gap:10px;
-  font-size:15px;
+  padding:6px 6px;border-top:1px dashed rgba(0,0,0,0.04);display:flex;align-items:center;gap:10px;
+  font-size:14px;
 }
 .exercise-list li:first-child{border-top:0}
 .session-actions{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
-.large-btn{padding:10px 14px;border-radius:10px;font-weight:600}
+.large-btn{padding:9px 12px;border-radius:10px;font-weight:600}
 .complete{background:linear-gradient(90deg,var(--ok),#0ea5a4);color:white}
 .incomplete{background:linear-gradient(90deg,#fff,#fff0);color:var(--muted);border:1px dashed var(--glass)}
-.progress {height:12px;background:linear-gradient(90deg,#e6eefc,#f3f7ff);border-radius:999px;overflow:hidden;border:1px solid var(--glass)}
+.progress {height:10px;background:linear-gradient(90deg,#e6eefc,#f3f7ff);border-radius:999px;overflow:hidden;border:1px solid var(--glass)}
 .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#7dd3fc);width:0%;}
-.small{font-size:13px;color:var(--muted)}
+.small{font-size:12px;color:var(--muted)}
 /* sticky aside on wide screens */
-aside .card{position:sticky;top:18px}
-/* 30-day grid */
+aside .card{position:sticky;top:12px}
+/* 30-day grid (compact) */
 .month-grid{
-  display:flex;gap:6px;align-items:flex-end;height:140px;padding:6px 4px;overflow-x:auto;overflow-y:visible;
+  display:flex;gap:6px;align-items:flex-end;height:100px;padding:6px 4px;overflow-x:auto;overflow-y:visible;
   -webkit-overflow-scrolling:touch;
 }
-.day-col{flex:0 0 22px;text-align:center}
+.day-col{flex:0 0 18px;text-align:center}
 .bar{height:0%;width:100%;border-radius:6px;background:linear-gradient(180deg,var(--accent),#60a5fa)}
 .day-label{font-size:10px;color:var(--muted);margin-top:6px;white-space:nowrap}
-.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .muted{color:var(--muted)}
 .actions .pill{display:inline-flex;align-items:center;gap:8px}
 .danger{background:var(--danger);color:#fff}
-.export-area{width:100%;height:120px;padding:8px;border-radius:8px;border:1px dashed var(--glass);background:#fafafa;resize:vertical;overflow:auto;font-family:monospace;font-size:12px}
+.export-area{width:100%;height:120px;padding:8px;border-radius:8px;border:1px dashed var(--glass);background:#fafafa;resize:vertical;overflow:auto;font-family:monospace;font-size:13px}
 label.checkbox{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
 input[type="checkbox"]{width:18px;height:18px}
-footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
 
-/* LOGIN SCREEN */
+/* LOGIN SCREEN (compact) */
 #loginScreen{
   position:fixed;top:0;left:0;width:100%;height:100%;
-  background:var(--bg);
-  display:flex;justify-content:center;align-items:center;
-  flex-direction:column;gap:20px;padding:20px;
-  z-index:9999;
+  background:var(--bg);display:flex;justify-content:center;align-items:center;flex-direction:column;gap:16px;padding:20px;z-index:9999;
 }
-#loginScreen button{
-  padding:12px 20px;font-size:16px;border-radius:8px;
-  background:var(--accent);color:white;border:0;
-}
+#loginScreen button{padding:10px 16px;font-size:15px;border-radius:8px;background:var(--accent);color:white;border:0;}
 
 /* ========== MOBILE (small screens) ========== */
 @media (max-width:900px){
-  body{padding:12px}
-  header{flex-direction:column;align-items:flex-start;gap:8px}
+  body{padding:6px}
+  header{flex-direction:column;align-items:flex-start;gap:6px}
   .controls{width:100%;justify-content:space-between}
   .date-display{order:2;margin-top:6px}
-  main{grid-template-columns:1fr;gap:12px}
+  main{grid-template-columns:1fr;gap:10px}
   aside .card{position:static;top:auto}
-  .month-grid{height:100px;padding:8px 6px}
-  .day-col{flex:0 0 30px}
+  .month-grid{height:84px;padding:6px 6px}
+  .day-col{flex:0 0 26px}
   .bar{border-radius:4px}
-  .exercise-list li{padding:10px 8px;font-size:16px}
-  .large-btn{width:100%;text-align:center}
+  .exercise-list li{padding:8px 6px;font-size:15px}
+  .large-btn{width:100%;text-align:center;padding:10px}
   .session-actions{flex-direction:column;align-items:stretch}
-  .nav-btn{padding:9px 12px}
-  .date-display{padding:8px 10px;font-size:14px}
-  .card{padding:12px}
-  h1{font-size:17px}
-  .export-area{height:140px}
+  .nav-btn{padding:8px 10px}
+  .date-display{padding:6px 8px;font-size:13px}
+  .card{padding:10px}
+  h1{font-size:16px}
+  .export-area{height:120px}
 }
 
 /* Very small screens */
 @media (max-width:420px){
-  body{padding:10px}
-  .day-col{flex:0 0 36px}
-  .exercise-list li{padding:12px 10px;font-size:17px}
-  button, .pill{padding:12px 12px;font-size:16px;border-radius:10px}
-  .progress{height:14px}
-  .month-grid{height:90px}
+  body{padding:6px}
+  .day-col{flex:0 0 30px}
+  .exercise-list li{padding:10px 8px;font-size:15px}
+  button, .pill{padding:10px 10px;font-size:15px;border-radius:8px}
+  .progress{height:12px}
+  .month-grid{height:78px}
 }
 
 /* Accessibility: focus outlines */
-button:focus, input:focus, .pill:focus { outline:3px solid rgba(37,99,235,0.14); outline-offset:2px; }
+button:focus, input:focus, .pill:focus { outline:3px solid rgba(37,99,235,0.12); outline-offset:2px; }
+
 </style>
 </head>
 <body>
