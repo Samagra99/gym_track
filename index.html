@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Workout Tracker — Cloud Synced (Responsive)</title>
+
+<!-- Firebase (compat used for simple integration) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+<script>
+// ======= PASTE YOUR FIREBASE CONFIG HERE =======
+// Replace with the config from Firebase Console -> Project settings -> SDK config
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+if(!firebase.apps.length){
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
+const auth = firebase.auth();
+</script>
+
+<style>
+/* ---------- FULL RESPONSIVE CSS (includes login overlay styles) ---------- */
+:root{
+  --bg:#f7f8fb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --ok:#10b981;
+  --danger:#ef4444; --glass: rgba(0,0,0,0.04);
+  --max-width:980px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background:var(--bg); margin:0; color:#111; padding:16px; -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:var(--max-width);margin:0 auto;}
+header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+  flex-wrap:wrap;
+}
+h1{font-size:18px;margin:0;line-height:1.1}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button, .pill{
+  cursor:pointer;border:0;background:var(--card);padding:8px 12px;border-radius:8px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);font-size:15px;
+}
+.nav-btn{
+  background:transparent;border:1px solid var(--glass);padding:8px 10px;border-radius:8px;
+}
+.date-display{
+  font-weight:600;padding:8px 12px;border-radius:8px;background:linear-gradient(180deg,#fff, #fbfdff);
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+main{
+  display:grid;grid-template-columns:1fr 360px;gap:16px;
+}
+.card{
+  background:var(--card);border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(16,24,40,0.04);
+}
+.session{margin-bottom:10px;padding:10px;border-radius:10px;border:1px solid var(--glass)}
+.session h3{margin:0 0 6px 0;font-size:16px}
+.exercise-list{margin:0;padding:0;list-style:none}
+.exercise-list li{
+  padding:8px 6px;border-top:1px dashed rgba(0,0,0,0.04);display:flex;align-items:center;gap:10px;
+  font-size:15px;
+}
+.exercise-list li:first-child{border-top:0}
+.session-actions{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.large-btn{padding:10px 14px;border-radius:10px;font-weight:600}
+.complete{background:linear-gradient(90deg,var(--ok),#0ea5a4);color:white}
+.incomplete{background:linear-gradient(90deg,#fff,#fff0);color:var(--muted);border:1px dashed var(--glass)}
+.progress {height:12px;background:linear-gradient(90deg,#e6eefc,#f3f7ff);border-radius:999px;overflow:hidden;border:1px solid var(--glass)}
+.progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#7dd3fc);width:0%;}
+.small{font-size:13px;color:var(--muted)}
+/* sticky aside on wide screens */
+aside .card{position:sticky;top:18px}
+/* 30-day grid */
+.month-grid{
+  display:flex;gap:6px;align-items:flex-end;height:140px;padding:6px 4px;overflow-x:auto;overflow-y:visible;
+  -webkit-overflow-scrolling:touch;
+}
+.day-col{flex:0 0 22px;text-align:center}
+.bar{height:0%;width:100%;border-radius:6px;background:linear-gradient(180deg,var(--accent),#60a5fa)}
+.day-label{font-size:10px;color:var(--muted);margin-top:6px;white-space:nowrap}
+.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.muted{color:var(--muted)}
+.actions .pill{display:inline-flex;align-items:center;gap:8px}
+.danger{background:var(--danger);color:#fff}
+.export-area{width:100%;height:120px;padding:8px;border-radius:8px;border:1px dashed var(--glass);background:#fafafa;resize:vertical;overflow:auto;font-family:monospace;font-size:12px}
+label.checkbox{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+input[type="checkbox"]{width:18px;height:18px}
+footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+
+/* LOGIN SCREEN */
+#loginScreen{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:var(--bg);
+  display:flex;justify-content:center;align-items:center;
+  flex-direction:column;gap:20px;padding:20px;
+  z-index:9999;
+}
+#loginScreen button{
+  padding:12px 20px;font-size:16px;border-radius:8px;
+  background:var(--accent);color:white;border:0;
+}
+
+/* ========== MOBILE (small screens) ========== */
+@media (max-width:900px){
+  body{padding:12px}
+  header{flex-direction:column;align-items:flex-start;gap:8px}
+  .controls{width:100%;justify-content:space-between}
+  .date-display{order:2;margin-top:6px}
+  main{grid-template-columns:1fr;gap:12px}
+  aside .card{position:static;top:auto}
+  .month-grid{height:100px;padding:8px 6px}
+  .day-col{flex:0 0 30px}
+  .bar{border-radius:4px}
+  .exercise-list li{padding:10px 8px;font-size:16px}
+  .large-btn{width:100%;text-align:center}
+  .session-actions{flex-direction:column;align-items:stretch}
+  .nav-btn{padding:9px 12px}
+  .date-display{padding:8px 10px;font-size:14px}
+  .card{padding:12px}
+  h1{font-size:17px}
+  .export-area{height:140px}
+}
+
+/* Very small screens */
+@media (max-width:420px){
+  body{padding:10px}
+  .day-col{flex:0 0 36px}
+  .exercise-list li{padding:12px 10px;font-size:17px}
+  button, .pill{padding:12px 12px;font-size:16px;border-radius:10px}
+  .progress{height:14px}
+  .month-grid{height:90px}
+}
+
+/* Accessibility: focus outlines */
+button:focus, input:focus, .pill:focus { outline:3px solid rgba(37,99,235,0.14); outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" aria-hidden="false">
+  <h2>Sign in to sync your workout data</h2>
+  <button id="googleLoginBtn">Sign in with Google</button>
+  <div class="small muted">(You will be redirected to sign in — ensure your domain is authorized in Firebase.)</div>
+</div>
+
+<!-- APP UI (hidden until signed in) -->
+<div class="wrap" id="appUI" style="display:none;">
+  <header>
+    <div>
+      <h1>Workout Tracker — Cloud Synced</h1>
+      <div class="small muted">Your progress automatically syncs to Firestore. Works offline.</div>
+    </div>
+
+    <div class="controls">
+      <div class="nav">
+        <button class="nav-btn" id="prevBtn" aria-label="Previous day">&larr;</button>
+        <button class="nav-btn" id="todayBtn" aria-label="Today">Today</button>
+        <button class="nav-btn" id="nextBtn" aria-label="Next day">&rarr;</button>
+      </div>
+      <div class="date-display" id="dateDisplay">—</div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="card" id="dayCard">
+        <h2 id="dayTitle">Day</h2>
+
+        <div class="session" id="morningSession">
+          <h3>Morning Session</h3>
+          <ul class="exercise-list" id="morningList"></ul>
+          <div class="session-actions">
+            <button id="toggleMorning" class="large-btn incomplete">Mark Morning Complete</button>
+            <div class="small muted" id="morningStatus"></div>
+          </div>
+        </div>
+
+        <div class="session" id="eveningSession">
+          <h3>Evening Session</h3>
+          <ul class="exercise-list" id="eveningList"></ul>
+          <div class="session-actions">
+            <button id="toggleEvening" class="large-btn incomplete">Mark Evening Complete</button>
+            <div class="small muted" id="eveningStatus"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="small muted">Daily Progress</div>
+          <div class="progress" title="Daily progress"><i id="dailyProgressBar" style="width:0%"></i></div>
+          <div class="meta">
+            <strong id="dailyPercent">0%</strong>
+            <div class="small muted" id="daySummary"></div>
+          </div>
+
+          <div class="action-row" style="margin-top:10px;">
+            <button id="resetDay" class="pill">Reset Day</button>
+            <button id="exportBtn" class="pill">Export JSON</button>
+            <button id="importBtn" class="pill">Import JSON</button>
+            <button id="clearAll" class="pill danger">Clear ALL Cloud Data</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <h3>30-Day Progress</h3>
+        <div class="small muted">Click a bar to open that day.</div>
+        <div class="month-grid" id="monthGrid"></div>
+
+        <div style="margin-top:12px">
+          <div class="small muted">Overall</div>
+          <div class="progress"><i id="overallBar" style="width:0%"></i></div>
+          <div class="meta">
+            <strong id="overallPercent">0%</strong>
+            <div class="small muted" id="overallSummary"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="small muted">Export / Import</div>
+          <textarea id="exportArea" class="export-area" placeholder="Exported JSON appears here"></textarea>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    Tip: Your data is stored in Firestore and backed up locally. Export before clearing if you want an external backup.
+  </footer>
+</div>
+
+<script>
+/* ---------- AUTH UI + FIRESTORE SYNC ---------- */
+const loginScreen = document.getElementById("loginScreen");
+const appUI = document.getElementById("appUI");
+const googleBtn = document.getElementById("googleLoginBtn");
+
+let userId = null;
+let data = {}; // cloud data (mirrors Firestore doc)
+const STORAGE_KEY = "workout_local_backup_v2";
+
+// Sign-in handler: try popup, fall back to redirect (good for mobile)
+googleBtn.addEventListener("click", async () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    await firebase.auth().signInWithPopup(provider);
+  } catch (err) {
+    console.warn("Popup failed, falling back to redirect:", err && err.code);
+    try {
+      await firebase.auth().signInWithRedirect(provider);
+    } catch (err2) {
+      console.error("Redirect sign-in failed:", err2);
+      alert("Sign-in failed — check console for details.");
+    }
+  }
+});
+
+// Auth state listener
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    userId = user.uid;
+    loginScreen.style.display = "none";
+    appUI.style.display = "block";
+    await loadFromFirestore();
+  } else {
+    // show login screen
+    loginScreen.style.display = "flex";
+    appUI.style.display = "none";
+  }
+});
+
+// Local backup helpers
+function saveLocalBackup(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){console.warn("local backup failed", e)}
+}
+function loadLocalBackup(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) data = JSON.parse(raw);
+  }catch(e){ console.warn("failed to load local backup", e) }
+}
+loadLocalBackup();
+
+// Firestore helpers
+async function loadFromFirestore(){
+  if(!userId) return;
+  try{
+    const docRef = db.collection("users").doc(userId).collection("workout").doc("data");
+    const snap = await docRef.get();
+    if(snap.exists){
+      data = snap.data();
+      saveLocalBackup();
+    } else {
+      // if cloud empty but local backup exists, keep local and push later
+      const localRaw = localStorage.getItem(STORAGE_KEY);
+      if(localRaw){
+        data = JSON.parse(localRaw);
+        await saveToFirestore();
+      } else {
+        data = {};
+      }
+    }
+  }catch(e){
+    console.error("Failed to load from Firestore:", e);
+    // keep local data if present
+    const localRaw = localStorage.getItem(STORAGE_KEY);
+    if(localRaw) data = JSON.parse(localRaw);
+  }
+  updateDayUI();
+}
+
+async function saveToFirestore(){
+  if(!userId) {
+    saveLocalBackup();
+    return;
+  }
+  try{
+    const docRef = db.collection("users").doc(userId).collection("workout").doc("data");
+    await docRef.set(data, { merge: true });
+    saveLocalBackup();
+  }catch(e){
+    console.error("Failed to save to Firestore:", e);
+    // still save locally
+    saveLocalBackup();
+  }
+}
+
+/* ---------- WORKOUT APP LOGIC (exercise-level + 30-day) ---------- */
+
+const PLAN = {
+  morning: [
+    "Warm-up: 5 min brisk walk or light jog + dynamic stretches",
+    "Jumping Jacks: 3 sets x 40 seconds (or 30 reps)",
+    "Bodyweight Squats: 3 sets x 12-15 reps",
+    "Plank: 3 sets x 30-45 seconds",
+    "Standing Calf Raises: 3 sets x 20 reps",
+    "Cool down: 3-5 minutes stretching"
+  ],
+  evening: [
+    "Warm-up: 3-5 min light cardio + mobility",
+    "Push-ups: 3 sets x 8-15 reps (modify on knees if needed)",
+    "Glute Bridge: 3 sets x 12-15 reps",
+    "Walking Lunges: 3 sets x 10-12 steps per leg",
+    "Leg Raises (lying): 3 sets x 10-15 reps",
+    "Optional finisher: 5-8 minutes steady cardio or core AMRAP",
+    "Cool down: 3-5 minutes stretching"
+  ]
+};
+
+const toISO = d => d.toISOString().slice(0,10);
+let currentDate = new Date();
+
+// DOM refs
+const morningList = document.getElementById("morningList");
+const eveningList = document.getElementById("eveningList");
+const toggleMorning = document.getElementById("toggleMorning");
+const toggleEvening = document.getElementById("toggleEvening");
+const morningStatus = document.getElementById("morningStatus");
+const eveningStatus = document.getElementById("eveningStatus");
+const dailyProgressBar = document.getElementById("dailyProgressBar");
+const dailyPercent = document.getElementById("dailyPercent");
+const daySummary = document.getElementById("daySummary");
+const monthGrid = document.getElementById("monthGrid");
+const overallBar = document.getElementById("overallBar");
+const overallPercent = document.getElementById("overallPercent");
+const overallSummary = document.getElementById("overallSummary");
+const exportArea = document.getElementById("exportArea");
+
+// storage helpers
+function ensureDay(iso){
+  if(!data[iso]) {
+    data[iso] = {
+      morning: { exercises: Array(PLAN.morning.length).fill(false) },
+      evening: { exercises: Array(PLAN.evening.length).fill(false) }
+    };
+  } else {
+    // normalize if plan length changed
+    if(!Array.isArray(data[iso].morning?.exercises) || data[iso].morning.exercises.length !== PLAN.morning.length)
+      data[iso].morning = { exercises: Array(PLAN.morning.length).fill(false) };
+    if(!Array.isArray(data[iso].evening?.exercises) || data[iso].evening.exercises.length !== PLAN.evening.length)
+      data[iso].evening = { exercises: Array(PLAN.evening.length).fill(false) };
+  }
+}
+function getDayState(iso){ ensureDay(iso); return data[iso]; }
+
+// render lists
+function renderExerciseList(listEl, items, sessionName){
+  listEl.innerHTML = "";
+  const iso = toISO(currentDate);
+  ensureDay(iso);
+  const state = data[iso][sessionName];
+  items.forEach((txt, idx)=>{
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <label class="checkbox">
+        <input type="checkbox" data-session="${sessionName}" data-idx="${idx}" ${state.exercises[idx] ? 'checked' : ''}>
+        <span style="flex:1">${txt}</span>
+      </label>
+    `;
+    listEl.appendChild(li);
+  });
+  // bind change listeners
+  listEl.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      const sess = e.target.dataset.session;
+      const i = Number(e.target.dataset.idx);
+      const iso2 = toISO(currentDate);
+      ensureDay(iso2);
+      data[iso2][sess].exercises[i] = e.target.checked;
+      saveToFirestore();
+      updateDayUI();
+    });
+  });
+}
+
+function sessionCompleted(sessionState){ return sessionState.exercises.every(Boolean); }
+
+function dayTotals(iso){
+  const s = getDayState(iso);
+  const done = s.morning.exercises.filter(Boolean).length + s.evening.exercises.filter(Boolean).length;
+  const total = PLAN.morning.length + PLAN.evening.length;
+  return { done, total };
+}
+
+function updateDayUI(){
+  const iso = toISO(currentDate);
+  document.getElementById("dateDisplay").textContent = currentDate.toDateString();
+  document.getElementById("dayTitle").textContent = "Workout for " + currentDate.toDateString();
+
+  renderExerciseList(morningList, PLAN.morning, 'morning');
+  renderExerciseList(eveningList, PLAN.evening, 'evening');
+
+  const state = getDayState(iso);
+  const mDoneCount = state.morning.exercises.filter(Boolean).length;
+  const eDoneCount = state.evening.exercises.filter(Boolean).length;
+
+  morningStatus.textContent = `${mDoneCount}/${PLAN.morning.length}`;
+  eveningStatus.textContent = `${eDoneCount}/${PLAN.evening.length}`;
+
+  const mCompleted = sessionCompleted(state.morning);
+  const eCompleted = sessionCompleted(state.evening);
+
+  toggleMorning.textContent = mCompleted ? "Morning Completed ✓" : "Mark Morning Complete";
+  toggleMorning.className = "large-btn " + (mCompleted ? "complete" : "incomplete");
+
+  toggleEvening.textContent = eCompleted ? "Evening Completed ✓" : "Mark Evening Complete";
+  toggleEvening.className = "large-btn " + (eCompleted ? "complete" : "incomplete");
+
+  // daily progress
+  const totals = dayTotals(iso);
+  const percent = totals.total === 0 ? 0 : Math.round((totals.done / totals.total) * 100);
+  dailyProgressBar.style.width = percent + "%";
+  (document.getElementById("dailyPercent")).textContent = percent + "%";
+  daySummary.textContent = `${totals.done} of ${totals.total} exercises complete`;
+
+  renderMonth();
+  renderOverall();
+}
+
+// month grid (last 30 days)
+function renderMonth(){
+  monthGrid.innerHTML = "";
+  for(let i=29;i>=0;i--){
+    const d = new Date(currentDate);
+    d.setDate(d.getDate() - i);
+    const iso = toISO(d);
+    let done = 0; const total = PLAN.morning.length + PLAN.evening.length;
+    if(data[iso]){
+      done = data[iso].morning.exercises.filter(Boolean).length + data[iso].evening.exercises.filter(Boolean).length;
+    }
+    const pct = total===0?0:Math.round(done/total*100);
+    const col = document.createElement('div');
+    col.className = 'day-col';
+    col.title = `${d.toDateString()} — ${pct}% (${done}/${total})`;
+    col.innerHTML = `<div style="height:104px;display:flex;align-items:flex-end;"><div class="bar" style="height:${pct}%"></div></div><div class="day-label">${d.getDate()}</div>`;
+    col.addEventListener('click', ()=>{ currentDate = new Date(d); updateDayUI(); });
+    monthGrid.appendChild(col);
+  }
+}
+
+// overall
+function renderOverall(){
+  let done = 0, planned = 0;
+  Object.keys(data).forEach(k=>{
+    const s = data[k];
+    done += s.morning.exercises.filter(Boolean).length + s.evening.exercises.filter(Boolean).length;
+    planned += PLAN.morning.length + PLAN.evening.length;
+  });
+  const pct = planned===0?0:Math.round(done/planned*100);
+  overallBar.style.width = pct + "%";
+  overallPercent.textContent = pct + "%";
+  overallSummary.textContent = `${done} of ${planned} exercises complete`;
+}
+
+/* ---------- Actions ---------- */
+document.getElementById("prevBtn").addEventListener("click", ()=>{ currentDate.setDate(currentDate.getDate()-1); updateDayUI(); });
+document.getElementById("nextBtn").addEventListener("click", ()=>{ currentDate.setDate(currentDate.getDate()+1); updateDayUI(); });
+document.getElementById("todayBtn").addEventListener("click", ()=>{ currentDate = new Date(); updateDayUI(); });
+
+toggleMorning.addEventListener("click", ()=>{
+  const iso = toISO(currentDate);
+  ensureDay(iso);
+  const st = data[iso].morning;
+  const all = sessionCompleted(st);
+  st.exercises = st.exercises.map(()=> !all);
+  saveToFirestore();
+  updateDayUI();
+});
+toggleEvening.addEventListener("click", ()=>{
+  const iso = toISO(currentDate);
+  ensureDay(iso);
+  const st = data[iso].evening;
+  const all = sessionCompleted(st);
+  st.exercises = st.exercises.map(()=> !all);
+  saveToFirestore();
+  updateDayUI();
+});
+
+document.getElementById("resetDay").addEventListener("click", ()=>{
+  const iso = toISO(currentDate);
+  if(data[iso]) { delete data[iso]; saveToFirestore(); }
+  updateDayUI();
+});
+
+document.getElementById("clearAll").addEventListener("click", async ()=>{
+  if(!confirm("Delete ALL workout data from the cloud?")) return;
+  data = {};
+  await saveToFirestore();
+  updateDayUI();
+});
+
+// Export / Import
+document.getElementById("exportBtn").addEventListener("click", ()=>{
+  exportArea.value = JSON.stringify(data, null, 2);
+});
+document.getElementById("importBtn").addEventListener("click", async ()=>{
+  try{
+    const parsed = JSON.parse(exportArea.value);
+    // basic validation
+    const ok = Object.keys(parsed).every(k=>/^\d{4}-\d{2}-\d{2}$/.test(k));
+    if(!ok) throw new Error("Invalid format");
+    data = parsed;
+    await saveToFirestore();
+    updateDayUI();
+    alert("Import successful");
+  }catch(e){ alert("Import failed: " + (e.message||e)); }
+});
+
+// Initialize UI (attempt to use local backup until auth completes)
+loadLocalBackup();
+updateDayUI();
+
+</script>
+
+</body>
+</html>
