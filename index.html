@@ -30,6 +30,25 @@ const auth = firebase.auth();
 </script>
 
 <style>
+/* Prevent horizontal overflow (so browser doesn't auto-scale to fit) */
+html,body{width:100%;overflow-x:hidden;}
+
+/* Ensure interactive controls use readable font sizes so mobile UX won't auto-zoom */
+input, textarea, select, button {
+  font-size: 16px;        /* prevents iOS/Android auto-zoom on focus */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Make images / long elements never force page wider than viewport */
+img, video, iframe, .month-grid, .exercise-list li {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure your main container doesn't cause overflow from padding */
+.wrap { width:100%; box-sizing:border-box; padding-left:8px; padding-right:8px; }
+</style>
+<style>
 /* ---------- FULL RESPONSIVE CSS (includes login overlay styles) ---------- */
 :root{
   --bg:#f7f8fb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --ok:#10b981;
