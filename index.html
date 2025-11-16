@@ -190,10 +190,23 @@ const auth = firebase.auth();
 // -------------------------
 const loginScreen = document.getElementById("loginScreen");
 const appUI = document.getElementById("appUI");
-document.getElementById("googleLoginBtn").onclick = () => {
+document.getElementById("googleLoginBtn").addEventListener("click", async () => {
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider);
-};
+  try {
+    // Try popup (works on some mobile browsers)
+    await firebase.auth().signInWithPopup(provider);
+  } catch (err) {
+    console.warn("Popup sign-in failed or blocked, falling back to redirect:", err && err.code);
+    try {
+      // Redirect is generally more reliable on mobile
+      await firebase.auth().signInWithRedirect(provider);
+    } catch (err2) {
+      console.error("Redirect sign-in failed:", err2);
+      alert("Sign-in failed — check console for details.");
+    }
+  }
+});
+
 
 auth.onAuthStateChanged(user => {
   if (user) {
@@ -478,3 +491,4 @@ document.getElementById("clearAll").onclick = async () => {
 
 </body>
 </html>
+
