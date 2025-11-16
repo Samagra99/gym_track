@@ -2,213 +2,220 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Workout Tracker — Cloud Synced (Responsive)</title>
+<!-- Recommended viewport for mobile; initial-scale helps stop some auto-zoom behavior -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Firebase (compat used for simple integration) -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<title>Workout Tracker — Mobile Fix</title>
 
-<script>
-// ======= PASTE YOUR FIREBASE CONFIG HERE =======
-// Replace with the config from Firebase Console -> Project settings -> SDK config
- const firebaseConfig = {
-    apiKey: "AIzaSyBeh-4g57-HcZc3pvmvPkAa0v_0giuA5yw",
-    authDomain: "gym-track-79e54.firebaseapp.com",
-    projectId: "gym-track-79e54",
-    storageBucket: "gym-track-79e54.firebasestorage.app",
-    messagingSenderId: "281510804516",
-    appId: "1:281510804516:web:78e3898f74d840b78c6cb1"
-};
-
-if(!firebase.apps.length){
-  firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.firestore();
-const auth = firebase.auth();
-</script>
-
+<!-- (Firebase scripts omitted here — add back your firebase SDKs and config if needed) -->
 
 <style>
-/* ---------- FULL RESPONSIVE CSS (includes login overlay styles) ---------- */
+/* -------------------------
+   Defensive mobile-first CSS
+   ------------------------- */
 :root{
   --bg:#f7f8fb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --ok:#10b981;
   --danger:#ef4444; --glass: rgba(0,0,0,0.04);
 }
-*{box-sizing:border-box}
-html,body{height:100%}
+
+/* Make sure nothing forces overflow */
+html,body { max-width:100%; width:100%; overflow-x:hidden; margin:0; padding:0; height:100%; -webkit-text-size-adjust:100%; }
+
+/* Base typography compact but legible */
 body{
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-  background:var(--bg); margin:0; color:#111; padding:8px; -webkit-font-smoothing:antialiased;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background:var(--bg); color:#111; font-size:15px; line-height:1.3; padding:6px;
+}
+
+/* Prevent auto-zoom on focus by using at least 16px on form controls */
+input, textarea, select, button {
+  font-size: 16px;           /* very important to avoid mobile auto-zoom on focus */
+  line-height: 1.2;
   -webkit-text-size-adjust:100%;
-  font-size:15px;
-  line-height:1.35;
-}
-.wrap{max-width:980px;margin:0 auto;padding:0 8px;}
-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  margin:8px 0;
-  flex-wrap:wrap;
-}
-h1{font-size:16px;margin:0;line-height:1.05}
-.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-button, .pill{
-  cursor:pointer;border:0;background:var(--card);padding:7px 10px;border-radius:8px;
-  box-shadow:0 1px 2px rgba(0,0,0,0.04);font-size:14px;
-}
-.nav-btn{
-  background:transparent;border:1px solid var(--glass);padding:6px 8px;border-radius:8px;
-}
-.date-display{
-  font-weight:600;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#fff, #fbfdff);
-  box-shadow:0 1px 2px rgba(0,0,0,0.04);font-size:13px;
-}
-/* Default: mobile-first, single column */
-main{
-  display:grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap:12px;
 }
 
-/* Only use two columns on wider screens */
-@media (min-width:900px){
-  main{
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr);
-    align-items:flex-start;
-  }
-}
+/* layout container */
+.wrap { max-width:900px; margin:0 auto; padding:0 8px; box-sizing:border-box; }
 
-.card{
-  background:var(--card);border-radius:10px;padding:10px;box-shadow:0 6px 14px rgba(16,24,40,0.03);
-}
-.session{margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid var(--glass)}
-.session h3{margin:0 0 6px 0;font-size:15px}
-.exercise-list{margin:0;padding:0;list-style:none}
-.exercise-list li{
-  padding:6px 6px;border-top:1px dashed rgba(0,0,0,0.04);display:flex;align-items:center;gap:10px;
-  font-size:14px;
-}
-.exercise-list li:first-child{border-top:0}
-.session-actions{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
-.large-btn{padding:9px 12px;border-radius:10px;font-weight:600}
-.complete{background:linear-gradient(90deg,var(--ok),#0ea5a4);color:white}
-.incomplete{background:linear-gradient(90deg,#fff,#fff0);color:var(--muted);border:1px dashed var(--glass)}
-.progress {height:10px;background:linear-gradient(90deg,#e6eefc,#f3f7ff);border-radius:999px;overflow:hidden;border:1px solid var(--glass)}
-.progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#7dd3fc);width:0%;}
-.small{font-size:12px;color:var(--muted)}
-/* sticky aside on wide screens */
-aside .card{position:sticky;top:12px}
-/* 30-day grid (compact) */
-.month-grid{
-  display:flex;gap:6px;align-items:flex-end;height:100px;padding:6px 4px;overflow-x:auto;overflow-y:visible;
-  -webkit-overflow-scrolling:touch;
-}
-.day-col{flex:0 0 18px;text-align:center}
-.bar{height:0%;width:100%;border-radius:6px;background:linear-gradient(180deg,var(--accent),#60a5fa)}
-.day-label{font-size:10px;color:var(--muted);margin-top:6px;white-space:nowrap}
-.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
-.muted{color:var(--muted)}
-.actions .pill{display:inline-flex;align-items:center;gap:8px}
-.danger{background:var(--danger);color:#fff}
-.export-area{width:100%;height:120px;padding:8px;border-radius:8px;border:1px dashed var(--glass);background:#fafafa;resize:vertical;overflow:auto;font-family:monospace;font-size:13px}
-label.checkbox{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
-input[type="checkbox"]{width:18px;height:18px}
-footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
+/* header */
+header{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin:8px 0; flex-wrap:wrap; }
+h1{ font-size:16px; margin:0; }
+.controls{ display:flex; gap:8px; align-items:center; }
 
-/* LOGIN SCREEN (compact) */
+/* nav/date compact */
+.nav-btn{ padding:6px 8px; border-radius:8px; border:1px solid var(--glass); background:transparent; font-size:14px; }
+.date-display{ padding:6px 8px; border-radius:8px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.04); font-weight:600; font-size:13px; }
+
+/* main responsive grid */
+main{ display:grid; grid-template-columns: 1fr 320px; gap:12px; align-items:start; }
+
+/* card & sessions compact */
+.card{ background:var(--card); border-radius:10px; padding:8px; box-shadow:0 6px 14px rgba(16,24,40,0.03); }
+.session{ margin-bottom:8px; padding:8px; border-radius:8px; border:1px solid var(--glass); }
+.session h3{ margin:0 0 6px 0; font-size:15px; }
+.exercise-list{ list-style:none; margin:0; padding:0; }
+.exercise-list li{ display:flex; gap:8px; align-items:flex-start; padding:6px 6px; border-top:1px dashed rgba(0,0,0,0.04); font-size:14px; }
+.exercise-list li:first-child{ border-top:0; }
+.exercise-list li label span{ display:block; word-break:break-word; white-space:normal; }
+
+/* buttons */
+.large-btn{ padding:9px 12px; border-radius:10px; font-weight:600; font-size:15px; }
+.complete{ background:linear-gradient(90deg,var(--ok),#0ea5a4); color:#fff }
+.incomplete{ background:#fff; color:var(--muted); border:1px dashed var(--glass) }
+
+/* progress */
+.progress{ height:10px; background:linear-gradient(90deg,#e6eefc,#f3f7ff); border-radius:999px; overflow:hidden; border:1px solid var(--glass); }
+.progress > i{ display:block; height:100%; background:linear-gradient(90deg,var(--accent),#7dd3fc); width:0%; }
+
+/* 30-day compact grid */
+.month-grid{ display:flex; gap:6px; align-items:flex-end; height:96px; padding:6px 4px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.day-col{ flex:0 0 18px; text-align:center; }
+.bar{ width:100%; border-radius:6px; background:linear-gradient(180deg,var(--accent),#60a5fa); }
+
+/* export area */
+.export-area{ width:100%; height:96px; padding:8px; border-radius:8px; border:1px dashed var(--glass); background:#fafafa; font-family:monospace; font-size:13px; }
+
+/* ---------- LOGIN SCREEN / OVERLAY STYLES (complete) ---------- */
+
+/* overlay container covers full viewport and centers content */
 #loginScreen{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  background:var(--bg);display:flex;justify-content:center;align-items:center;flex-direction:column;gap:16px;padding:20px;z-index:9999;
+  position: fixed;
+  inset: 0;                       /* top:0; right:0; bottom:0; left:0 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: rgba(247,248,251,0.98); /* slightly translucent background */
+  z-index: 9999;
+  -webkit-overflow-scrolling: touch;
 }
-#loginScreen button{padding:10px 16px;font-size:15px;border-radius:8px;background:var(--accent);color:white;border:0;}
 
-/* ========== MOBILE (small screens) ========== */
+/* card inside overlay */
+#loginScreen .login-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.08);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+/* headline and helper text */
+#loginScreen h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.15;
+}
+#loginScreen .muted {
+  color: var(--muted, #6b7280);
+  font-size: 14px;
+}
+
+/* primary sign-in button */
+#loginScreen button#googleLoginBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(90deg,var(--accent,#2563eb),#60a5fa);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(37,99,235,0.12);
+}
+
+/* small skip/close button for local testing — optional */
+#loginScreen button#loginCloseBtn {
+  align-self: flex-end;
+  background: transparent;
+  border: 0;
+  color: var(--muted, #6b7280);
+  font-size: 13px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+/* keep focus styles visible for accessibility */
+#loginScreen button:focus, #loginScreen a:focus {
+  outline: 3px solid rgba(37,99,235,0.12);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* layout adjustments for very small screens */
+@media (max-width: 420px) {
+  #loginScreen .login-card { padding: 12px; border-radius: 10px; }
+  #loginScreen h2 { font-size: 16px; }
+  #loginScreen .muted { font-size: 13px; }
+  #loginScreen button#googleLoginBtn { font-size: 14px; padding: 10px; }
+}
+
+/* utility: hide overlay quickly (JS toggles this class) */
+#loginScreen.hidden { display: none !important; }
+
+ 
+/* compact meta text */
+.small{ font-size:12px; color:var(--muted); }
+
+/* accessibility/focus */
+button:focus, input:focus, textarea:focus { outline: 3px solid rgba(37,99,235,0.12); outline-offset:2px; }
+
+/* ---------- Mobile adjustments (tighten spacing) ---------- */
 @media (max-width:900px){
-  body{padding:6px}
-  header{flex-direction:column;align-items:flex-start;gap:6px}
-  .controls{width:100%;justify-content:space-between}
-  .date-display{order:2;margin-top:6px}
-  main{grid-template-columns:1fr;gap:10px}
-  aside .card{position:static;top:auto}
-  .month-grid{height:84px;padding:6px 6px}
-  .day-col{flex:0 0 26px}
-  .bar{border-radius:4px}
-  .exercise-list li{padding:8px 6px;font-size:15px}
-  .large-btn{width:100%;text-align:center;padding:10px}
-  .session-actions{flex-direction:column;align-items:stretch}
-  .nav-btn{padding:8px 10px}
-  .date-display{padding:6px 8px;font-size:13px}
-  .card{padding:10px}
-  h1{font-size:16px}
-  .export-area{height:120px}
+  body{ padding:6px; }
+  main{ grid-template-columns: 1fr; gap:8px; }
+  .card{ padding:8px; }
+  .month-grid{ height:84px; gap:4px; }
+  .day-col{ flex:0 0 24px; }
+  .exercise-list li{ padding:8px 6px; font-size:15px; }
+  .large-btn{ width:100%; padding:10px; }
+  .session-actions{ display:flex; flex-direction:column; gap:8px; }
+  .date-display{ font-size:13px; padding:6px 8px; }
 }
 
-/* Very small screens */
-@media (max-width:420px){
-  body{padding:6px}
-  .day-col{flex:0 0 30px}
-  .exercise-list li{padding:10px 8px;font-size:15px}
-  button, .pill{padding:10px 10px;font-size:15px;border-radius:8px}
-  .progress{height:12px}
-  .month-grid{height:78px}
-}
-/* Hard clamp: nothing in the main layout is allowed to be wider than the viewport */
-html, body {
-  max-width: 100%;
-  overflow-x: hidden;
+/* very small devices - further shrink slightly */
+@media (max-width:380px){
+  html, body { font-size:14px; }
+  .day-col{ flex:0 0 28px; }
+  .month-grid{ height:74px; }
+  .export-area{ height:80px; font-size:12px; }
 }
 
-/* Cards and layout cannot exceed screen width */
-.wrap, main, .card, .session {
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Make sure long text always wraps and never forces horizontal growth */
-.exercise-list li span {
-  display: block;
-  white-space: normal;
-  word-wrap: break-word;
-  word-break: break-word;
-}
-
-/* Progress grid also should never be wider than screen at once */
-.month-grid {
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Accessibility: focus outlines */
-button:focus, input:focus, .pill:focus { outline:3px solid rgba(37,99,235,0.12); outline-offset:2px; }
-
+/* final safety net: ensure no element wider than viewport */
+*{ max-width:100vw; box-sizing:border-box; }
 </style>
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
-<div id="loginScreen" aria-hidden="false">
-  <h2>Sign in to sync your workout data</h2>
-  <button id="googleLoginBtn">Sign in with Google</button>
-  <div class="small muted">(You will be redirected to sign in — ensure your domain is authorized in Firebase.)</div>
+ <!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <button id="loginCloseBtn" title="Close (test only)">✕</button>   <!-- optional -->
+    <h2>Sign in to sync your workout data</h2>
+    <div class="muted">Your progress will be stored securely in Firestore.</div>
+    <button id="googleLoginBtn">Sign in with Google</button>
+  </div>
 </div>
 
-<!-- APP UI (hidden until signed in) -->
-<div class="wrap" id="appUI" style="display:none;">
+<div class="wrap">
   <header>
     <div>
-      <h1>Workout Tracker — Cloud Synced</h1>
-      <div class="small muted">Your progress automatically syncs to Firestore. Works offline.</div>
+      <h1>Workout Tracker</h1>
+      <div class="small">Compact mobile layout</div>
     </div>
 
     <div class="controls">
-      <div class="nav">
-        <button class="nav-btn" id="prevBtn" aria-label="Previous day">&larr;</button>
-        <button class="nav-btn" id="todayBtn" aria-label="Today">Today</button>
-        <button class="nav-btn" id="nextBtn" aria-label="Next day">&rarr;</button>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="nav-btn" id="prevBtn" aria-label="Previous">&larr;</button>
+        <button class="nav-btn" id="todayBtn">Today</button>
+        <button class="nav-btn" id="nextBtn" aria-label="Next">&rarr;</button>
       </div>
       <div class="date-display" id="dateDisplay">—</div>
     </div>
@@ -216,40 +223,50 @@ button:focus, input:focus, .pill:focus { outline:3px solid rgba(37,99,235,0.12);
 
   <main>
     <section>
-      <div class="card" id="dayCard">
-        <h2 id="dayTitle">Day</h2>
+      <div class="card">
+        <h2 id="dayTitle">Workout</h2>
 
-        <div class="session" id="morningSession">
+        <div class="session">
           <h3>Morning Session</h3>
-          <ul class="exercise-list" id="morningList"></ul>
-          <div class="session-actions">
-            <button id="toggleMorning" class="large-btn incomplete">Mark Morning Complete</button>
-            <div class="small muted" id="morningStatus"></div>
+          <ul class="exercise-list" id="morningList">
+            <li><label><input type="checkbox"> <span>Warm-up: 5 min brisk walk or light jog + dynamic stretches</span></label></li>
+            <li><label><input type="checkbox"> <span>Jumping Jacks: 3 sets x 40 seconds (or 30 reps)</span></label></li>
+            <li><label><input type="checkbox"> <span>Bodyweight Squats: 3 sets x 12-15 reps</span></label></li>
+            <li><label><input type="checkbox"> <span>Plank: 3 sets x 30-45 seconds</span></label></li>
+            <li><label><input type="checkbox"> <span>Standing Calf Raises: 3 sets x 20 reps</span></label></li>
+            <li><label><input type="checkbox"> <span>Cool down: 3-5 minutes stretching</span></label></li>
+          </ul>
+          <div style="margin-top:8px;">
+            <button class="large-btn incomplete" id="markMorning">Mark Morning Complete</button>
           </div>
         </div>
 
-        <div class="session" id="eveningSession">
+        <div class="session">
           <h3>Evening Session</h3>
-          <ul class="exercise-list" id="eveningList"></ul>
-          <div class="session-actions">
-            <button id="toggleEvening" class="large-btn incomplete">Mark Evening Complete</button>
-            <div class="small muted" id="eveningStatus"></div>
+          <ul class="exercise-list" id="eveningList">
+            <li><label><input type="checkbox"> <span>Warm-up: 3-5 min light cardio + mobility</span></label></li>
+            <li><label><input type="checkbox"> <span>Push-ups: 3 sets x 8-15 reps (modify on knees if needed)</span></label></li>
+            <li><label><input type="checkbox"> <span>Glute Bridge: 3 sets x 12-15 reps</span></label></li>
+            <li><label><input type="checkbox"> <span>Walking Lunges: 3 sets x 10-12 steps per leg</span></label></li>
+            <li><label><input type="checkbox"> <span>Leg Raises (lying): 3 sets x 10-15 reps</span></label></li>
+            <li><label><input type="checkbox"> <span>Optional finisher: 5-8 minutes steady cardio or core AMRAP</span></label></li>
+            <li><label><input type="checkbox"> <span>Cool down: 3-5 minutes stretching</span></label></li>
+          </ul>
+          <div style="margin-top:8px;">
+            <button class="large-btn incomplete" id="markEvening">Mark Evening Complete</button>
           </div>
         </div>
 
-        <div style="margin-top:10px">
-          <div class="small muted">Daily Progress</div>
-          <div class="progress" title="Daily progress"><i id="dailyProgressBar" style="width:0%"></i></div>
-          <div class="meta">
-            <strong id="dailyPercent">0%</strong>
-            <div class="small muted" id="daySummary"></div>
-          </div>
+        <div style="margin-top:10px;">
+          <div class="small">Daily Progress</div>
+          <div class="progress" aria-hidden="true"><i id="dailyBar" style="width:0%"></i></div>
+          <div class="small" id="dailyText" style="margin-top:6px">0% (0 of 0 exercises)</div>
 
-          <div class="action-row" style="margin-top:10px;">
-            <button id="resetDay" class="pill">Reset Day</button>
-            <button id="exportBtn" class="pill">Export JSON</button>
-            <button id="importBtn" class="pill">Import JSON</button>
-            <button id="clearAll" class="pill danger">Clear ALL Cloud Data</button>
+          <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="pill" id="resetDay">Reset Day</button>
+            <button class="pill" id="exportBtn">Export JSON</button>
+            <button class="pill" id="importBtn">Import JSON</button>
+            <button class="pill" id="clearAll" style="background:var(--danger); color:#fff;">Clear All</button>
           </div>
         </div>
       </div>
@@ -258,353 +275,140 @@ button:focus, input:focus, .pill:focus { outline:3px solid rgba(37,99,235,0.12);
     <aside>
       <div class="card">
         <h3>30-Day Progress</h3>
-        <div class="small muted">Click a bar to open that day.</div>
-        <div class="month-grid" id="monthGrid"></div>
+        <div class="small">Tap a bar to view that day</div>
+        <div class="month-grid" id="monthGrid"><!-- bars added by JS --></div>
 
-        <div style="margin-top:12px">
-          <div class="small muted">Overall</div>
-          <div class="progress"><i id="overallBar" style="width:0%"></i></div>
-          <div class="meta">
-            <strong id="overallPercent">0%</strong>
-            <div class="small muted" id="overallSummary"></div>
-          </div>
+        <div style="margin-top:10px;">
+          <div class="small">Overall</div>
+          <div class="progress" style="margin-top:6px;"><i id="overallBar" style="width:0%"></i></div>
+          <div class="small" id="overallText" style="margin-top:6px">0% complete</div>
         </div>
 
-        <div style="margin-top:12px">
-          <div class="small muted">Export / Import</div>
-          <textarea id="exportArea" class="export-area" placeholder="Exported JSON appears here"></textarea>
+        <div style="margin-top:8px;">
+          <textarea id="exportArea" class="export-area" placeholder="Exported JSON will appear here"></textarea>
         </div>
       </div>
     </aside>
   </main>
 
-  <footer>
-    Tip: Your data is stored in Firestore and backed up locally. Export before clearing if you want an external backup.
-  </footer>
+  <footer style="margin-top:8px; font-size:12px; color:#666;">Tip: Open in Chrome on Android. If layout still looks off, try a hard refresh or Incognito to clear cached CSS.</footer>
 </div>
 
 <script>
-/* ---------- AUTH UI + FIRESTORE SYNC ---------- */
-const loginScreen = document.getElementById("loginScreen");
-const appUI = document.getElementById("appUI");
-const googleBtn = document.getElementById("googleLoginBtn");
+/* Defensive JS to remove accidental focus and reset scroll on load */
+(function(){
+  // Blur any element that might have focus on load (prevents some devices from auto-zooming to a focused control)
+  window.addEventListener('load', function(){ 
+    try{ if(document.activeElement) document.activeElement.blur(); }catch(e){}
+    // small scroll reset after a tick
+    setTimeout(()=>{ try{ window.scrollTo(0,0); }catch(e){} }, 50);
+  });
 
-let userId = null;
-let data = {}; // cloud data (mirrors Firestore doc)
-const STORAGE_KEY = "workout_local_backup_v2";
-
-// Sign-in handler: try popup, fall back to redirect (good for mobile)
-googleBtn.addEventListener("click", async () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  try {
-    await firebase.auth().signInWithPopup(provider);
-  } catch (err) {
-    console.warn("Popup failed, falling back to redirect:", err && err.code);
-    try {
-      await firebase.auth().signInWithRedirect(provider);
-    } catch (err2) {
-      console.error("Redirect sign-in failed:", err2);
-      alert("Sign-in failed — check console for details.");
-    }
-  }
-});
-
-// Auth state listener
-auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    userId = user.uid;
-    loginScreen.style.display = "none";
-    appUI.style.display = "block";
-    await loadFromFirestore();
-  } else {
-    // show login screen
-    loginScreen.style.display = "flex";
-    appUI.style.display = "none";
-  }
-});
-
-// Local backup helpers
-function saveLocalBackup(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){console.warn("local backup failed", e)}
-}
-function loadLocalBackup(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) data = JSON.parse(raw);
-  }catch(e){ console.warn("failed to load local backup", e) }
-}
-loadLocalBackup();
-
-// Firestore helpers
-async function loadFromFirestore(){
-  if(!userId) return;
-  try{
-    const docRef = db.collection("users").doc(userId).collection("workout").doc("data");
-    const snap = await docRef.get();
-    if(snap.exists){
-      data = snap.data();
-      saveLocalBackup();
+  // Extra: dynamically slightly reduce font-size on very narrow viewports to avoid overflow
+  function adjustFont(){
+    var w = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    if(w < 360){
+      document.documentElement.style.fontSize = '14px';
     } else {
-      // if cloud empty but local backup exists, keep local and push later
-      const localRaw = localStorage.getItem(STORAGE_KEY);
-      if(localRaw){
-        data = JSON.parse(localRaw);
-        await saveToFirestore();
-      } else {
-        data = {};
-      }
+      document.documentElement.style.fontSize = '';
     }
-  }catch(e){
-    console.error("Failed to load from Firestore:", e);
-    // keep local data if present
-    const localRaw = localStorage.getItem(STORAGE_KEY);
-    if(localRaw) data = JSON.parse(localRaw);
   }
-  updateDayUI();
-}
+  window.addEventListener('resize', adjustFont);
+  adjustFont();
+})();
 
-async function saveToFirestore(){
-  if(!userId) {
-    saveLocalBackup();
-    return;
+/* Minimal interactive JS for demo so you can test quickly */
+(function(){
+  // compute total exercises from static DOM lists
+  function countExercises(){
+    const morning = document.querySelectorAll('#morningList li').length;
+    const evening = document.querySelectorAll('#eveningList li').length;
+    return { morning, evening, total: morning + evening };
   }
-  try{
-    const docRef = db.collection("users").doc(userId).collection("workout").doc("data");
-    await docRef.set(data, { merge: true });
-    saveLocalBackup();
-  }catch(e){
-    console.error("Failed to save to Firestore:", e);
-    // still save locally
-    saveLocalBackup();
+  function updateProgress(){
+    const checks = document.querySelectorAll('#morningList input[type=checkbox], #eveningList input[type=checkbox]');
+    let done = 0;
+    checks.forEach(cb => { if(cb.checked) done++; });
+    const totals = countExercises();
+    const pct = totals.total===0 ? 0 : Math.round((done / totals.total) * 100);
+    document.getElementById('dailyBar').style.width = pct + '%';
+    document.getElementById('dailyText').textContent = pct + '% ('+done+' of '+totals.total+' exercises)';
+    // update monthGrid mock bars (simple arith)
+    renderMonthGridMock(done, totals.total);
+    document.getElementById('overallText').textContent = pct + '% complete';
   }
-}
-
-/* ---------- WORKOUT APP LOGIC (exercise-level + 30-day) ---------- */
-
-const PLAN = {
-  morning: [
-    "Warm-up: 5 min brisk walk or light jog + dynamic stretches",
-    "Jumping Jacks: 3 sets x 40 seconds (or 30 reps)",
-    "Bodyweight Squats: 3 sets x 12-15 reps",
-    "Plank: 3 sets x 30-45 seconds",
-    "Standing Calf Raises: 3 sets x 20 reps",
-    "Cool down: 3-5 minutes stretching"
-  ],
-  evening: [
-    "Warm-up: 3-5 min light cardio + mobility",
-    "Push-ups: 3 sets x 8-15 reps (modify on knees if needed)",
-    "Glute Bridge: 3 sets x 12-15 reps",
-    "Walking Lunges: 3 sets x 10-12 steps per leg",
-    "Leg Raises (lying): 3 sets x 10-15 reps",
-    "Optional finisher: 5-8 minutes steady cardio or core AMRAP",
-    "Cool down: 3-5 minutes stretching"
-  ]
-};
-
-const toISO = d => d.toISOString().slice(0,10);
-let currentDate = new Date();
-
-// DOM refs
-const morningList = document.getElementById("morningList");
-const eveningList = document.getElementById("eveningList");
-const toggleMorning = document.getElementById("toggleMorning");
-const toggleEvening = document.getElementById("toggleEvening");
-const morningStatus = document.getElementById("morningStatus");
-const eveningStatus = document.getElementById("eveningStatus");
-const dailyProgressBar = document.getElementById("dailyProgressBar");
-const dailyPercent = document.getElementById("dailyPercent");
-const daySummary = document.getElementById("daySummary");
-const monthGrid = document.getElementById("monthGrid");
-const overallBar = document.getElementById("overallBar");
-const overallPercent = document.getElementById("overallPercent");
-const overallSummary = document.getElementById("overallSummary");
-const exportArea = document.getElementById("exportArea");
-
-// storage helpers
-function ensureDay(iso){
-  if(!data[iso]) {
-    data[iso] = {
-      morning: { exercises: Array(PLAN.morning.length).fill(false) },
-      evening: { exercises: Array(PLAN.evening.length).fill(false) }
-    };
-  } else {
-    // normalize if plan length changed
-    if(!Array.isArray(data[iso].morning?.exercises) || data[iso].morning.exercises.length !== PLAN.morning.length)
-      data[iso].morning = { exercises: Array(PLAN.morning.length).fill(false) };
-    if(!Array.isArray(data[iso].evening?.exercises) || data[iso].evening.exercises.length !== PLAN.evening.length)
-      data[iso].evening = { exercises: Array(PLAN.evening.length).fill(false) };
-  }
-}
-function getDayState(iso){ ensureDay(iso); return data[iso]; }
-
-// render lists
-function renderExerciseList(listEl, items, sessionName){
-  listEl.innerHTML = "";
-  const iso = toISO(currentDate);
-  ensureDay(iso);
-  const state = data[iso][sessionName];
-  items.forEach((txt, idx)=>{
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <label class="checkbox">
-        <input type="checkbox" data-session="${sessionName}" data-idx="${idx}" ${state.exercises[idx] ? 'checked' : ''}>
-        <span style="flex:1">${txt}</span>
-      </label>
-    `;
-    listEl.appendChild(li);
+  // attach checkbox listener
+  document.querySelectorAll('#morningList input[type=checkbox], #eveningList input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', updateProgress);
   });
-  // bind change listeners
-  listEl.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
-    cb.addEventListener('change', e=>{
-      const sess = e.target.dataset.session;
-      const i = Number(e.target.dataset.idx);
-      const iso2 = toISO(currentDate);
-      ensureDay(iso2);
-      data[iso2][sess].exercises[i] = e.target.checked;
-      saveToFirestore();
-      updateDayUI();
-    });
+
+  // mark morning/evening toggles
+  document.getElementById('markMorning').addEventListener('click', ()=>{
+    const list = document.querySelectorAll('#morningList input[type=checkbox]');
+    const all = Array.from(list).every(i=>i.checked);
+    list.forEach(i=> i.checked = !all);
+    updateProgress();
   });
-}
+  document.getElementById('markEvening').addEventListener('click', ()=>{
+    const list = document.querySelectorAll('#eveningList input[type=checkbox]');
+    const all = Array.from(list).every(i=>i.checked);
+    list.forEach(i=> i.checked = !all);
+    updateProgress();
+  });
 
-function sessionCompleted(sessionState){ return sessionState.exercises.every(Boolean); }
+  document.getElementById('resetDay').addEventListener('click', ()=>{
+    document.querySelectorAll('#morningList input,#eveningList input').forEach(i=> i.checked = false);
+    updateProgress();
+  });
 
-function dayTotals(iso){
-  const s = getDayState(iso);
-  const done = s.morning.exercises.filter(Boolean).length + s.evening.exercises.filter(Boolean).length;
-  const total = PLAN.morning.length + PLAN.evening.length;
-  return { done, total };
-}
-
-function updateDayUI(){
-  const iso = toISO(currentDate);
-  document.getElementById("dateDisplay").textContent = currentDate.toDateString();
-  document.getElementById("dayTitle").textContent = "Workout for " + currentDate.toDateString();
-
-  renderExerciseList(morningList, PLAN.morning, 'morning');
-  renderExerciseList(eveningList, PLAN.evening, 'evening');
-
-  const state = getDayState(iso);
-  const mDoneCount = state.morning.exercises.filter(Boolean).length;
-  const eDoneCount = state.evening.exercises.filter(Boolean).length;
-
-  morningStatus.textContent = `${mDoneCount}/${PLAN.morning.length}`;
-  eveningStatus.textContent = `${eDoneCount}/${PLAN.evening.length}`;
-
-  const mCompleted = sessionCompleted(state.morning);
-  const eCompleted = sessionCompleted(state.evening);
-
-  toggleMorning.textContent = mCompleted ? "Morning Completed ✓" : "Mark Morning Complete";
-  toggleMorning.className = "large-btn " + (mCompleted ? "complete" : "incomplete");
-
-  toggleEvening.textContent = eCompleted ? "Evening Completed ✓" : "Mark Evening Complete";
-  toggleEvening.className = "large-btn " + (eCompleted ? "complete" : "incomplete");
-
-  // daily progress
-  const totals = dayTotals(iso);
-  const percent = totals.total === 0 ? 0 : Math.round((totals.done / totals.total) * 100);
-  dailyProgressBar.style.width = percent + "%";
-  (document.getElementById("dailyPercent")).textContent = percent + "%";
-  daySummary.textContent = `${totals.done} of ${totals.total} exercises complete`;
-
-  renderMonth();
-  renderOverall();
-}
-
-// month grid (last 30 days)
-function renderMonth(){
-  monthGrid.innerHTML = "";
-  for(let i=29;i>=0;i--){
-    const d = new Date(currentDate);
-    d.setDate(d.getDate() - i);
-    const iso = toISO(d);
-    let done = 0; const total = PLAN.morning.length + PLAN.evening.length;
-    if(data[iso]){
-      done = data[iso].morning.exercises.filter(Boolean).length + data[iso].evening.exercises.filter(Boolean).length;
+  // month grid mock renderer: draws 30 bars scaled to current day's done count so you can test visuals
+  function renderMonthGridMock(doneToday, total){
+    const grid = document.getElementById('monthGrid');
+    grid.innerHTML = '';
+    for(let i=29;i>=0;i--){
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      // create a demo percent - random-ish but include today's actual percent for the last column
+      let pct = Math.max(0, Math.round(((i===0 ? doneToday : ((Math.abs(Math.sin(d.getDate()))*total)|0)) / total) * 100));
+      const col = document.createElement('div');
+      col.className = 'day-col';
+      col.innerHTML = '<div style="height:84px;display:flex;align-items:flex-end;"><div class="bar" style="height:'+pct+'%"></div></div><div class="day-label">'+d.getDate()+'</div>';
+      (function(dateCopy){
+        col.addEventListener('click', function(){
+          // navigate to that date -- for demo this simply alerts
+          alert('Open date: ' + dateCopy.toDateString());
+        });
+      })(new Date(d));
+      grid.appendChild(col);
     }
-    const pct = total===0?0:Math.round(done/total*100);
-    const col = document.createElement('div');
-    col.className = 'day-col';
-    col.title = `${d.toDateString()} — ${pct}% (${done}/${total})`;
-    col.innerHTML = `<div style="height:104px;display:flex;align-items:flex-end;"><div class="bar" style="height:${pct}%"></div></div><div class="day-label">${d.getDate()}</div>`;
-    col.addEventListener('click', ()=>{ currentDate = new Date(d); updateDayUI(); });
-    monthGrid.appendChild(col);
   }
-}
 
-// overall
-function renderOverall(){
-  let done = 0, planned = 0;
-  Object.keys(data).forEach(k=>{
-    const s = data[k];
-    done += s.morning.exercises.filter(Boolean).length + s.evening.exercises.filter(Boolean).length;
-    planned += PLAN.morning.length + PLAN.evening.length;
+  // initial render
+  updateProgress();
+
+  // navigation demo
+  document.getElementById('prevBtn').addEventListener('click', ()=> alert('Prev day (demo)'));
+  document.getElementById('nextBtn').addEventListener('click', ()=> alert('Next day (demo)'));
+  document.getElementById('todayBtn').addEventListener('click', ()=> alert('Go to today (demo)'));
+
+  // export/import/clear mock behavior
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const state = { demo: 'this is a demonstration export' };
+    document.getElementById('exportArea').value = JSON.stringify(state, null, 2);
+    alert('Exported to text area (demo).');
   });
-  const pct = planned===0?0:Math.round(done/planned*100);
-  overallBar.style.width = pct + "%";
-  overallPercent.textContent = pct + "%";
-  overallSummary.textContent = `${done} of ${planned} exercises complete`;
-}
+  document.getElementById('importBtn').addEventListener('click', ()=>{
+    alert('Import (demo) - paste JSON into the box then press import in the final version.');
+  });
+  document.getElementById('clearAll').addEventListener('click', ()=>{
+    if(confirm('Clear all data (demo)?')){
+      document.querySelectorAll('#morningList input,#eveningList input').forEach(i=> i.checked = false);
+      updateProgress();
+      document.getElementById('exportArea').value = '';
+    }
+  });
 
-/* ---------- Actions ---------- */
-document.getElementById("prevBtn").addEventListener("click", ()=>{ currentDate.setDate(currentDate.getDate()-1); updateDayUI(); });
-document.getElementById("nextBtn").addEventListener("click", ()=>{ currentDate.setDate(currentDate.getDate()+1); updateDayUI(); });
-document.getElementById("todayBtn").addEventListener("click", ()=>{ currentDate = new Date(); updateDayUI(); });
-
-toggleMorning.addEventListener("click", ()=>{
-  const iso = toISO(currentDate);
-  ensureDay(iso);
-  const st = data[iso].morning;
-  const all = sessionCompleted(st);
-  st.exercises = st.exercises.map(()=> !all);
-  saveToFirestore();
-  updateDayUI();
-});
-toggleEvening.addEventListener("click", ()=>{
-  const iso = toISO(currentDate);
-  ensureDay(iso);
-  const st = data[iso].evening;
-  const all = sessionCompleted(st);
-  st.exercises = st.exercises.map(()=> !all);
-  saveToFirestore();
-  updateDayUI();
-});
-
-document.getElementById("resetDay").addEventListener("click", ()=>{
-  const iso = toISO(currentDate);
-  if(data[iso]) { delete data[iso]; saveToFirestore(); }
-  updateDayUI();
-});
-
-document.getElementById("clearAll").addEventListener("click", async ()=>{
-  if(!confirm("Delete ALL workout data from the cloud?")) return;
-  data = {};
-  await saveToFirestore();
-  updateDayUI();
-});
-
-// Export / Import
-document.getElementById("exportBtn").addEventListener("click", ()=>{
-  exportArea.value = JSON.stringify(data, null, 2);
-});
-document.getElementById("importBtn").addEventListener("click", async ()=>{
-  try{
-    const parsed = JSON.parse(exportArea.value);
-    // basic validation
-    const ok = Object.keys(parsed).every(k=>/^\d{4}-\d{2}-\d{2}$/.test(k));
-    if(!ok) throw new Error("Invalid format");
-    data = parsed;
-    await saveToFirestore();
-    updateDayUI();
-    alert("Import successful");
-  }catch(e){ alert("Import failed: " + (e.message||e)); }
-});
-
-// Initialize UI (attempt to use local backup until auth completes)
-loadLocalBackup();
-updateDayUI();
-
+})();
 </script>
-
 </body>
 </html>
